@@ -1,0 +1,109 @@
+---
+tags:
+    - meeting
+    - summary
+date: {{ date }}
+subject: "{{ subject }}"
+project:
+attendees:
+{% for a in attendees %}
+    - {{ a }}
+{% endfor %}
+duration: {{ duration }}
+---
+
+# {{ summary.title }}
+---
+
+## 📝 Стисло
+{{ summary.summary_short }}
+
+## 👤 Мої задачі
+{% if summary.my_actions %}
+{% for a in summary.my_actions %}
+- [ ] {{ a.task }}{{ ' (дедлайн: ' ~ a.due ~ ')' if a.due else '' }}
+{% endfor %}
+{% else %}
+- Нема виділених задач
+{% endif %}
+
+## ⭐ Основні моменти
+{% if summary.key_points %}
+{% for p in summary.key_points %}
+- {{ p }}
+{% endfor %}
+{% else %}
+- …
+{% endif %}
+
+## 🎯 Контекст
+- Мета зустрічі: {{ summary.context.goal or '' }}
+- Поточний статус/факти: {{ summary.context.status or '' }}
+
+## ✅ Рішення, які прийняли
+{% if summary.decisions %}
+{% for d in summary.decisions %}
+- {{ d.description }}
+  - Статус: {{ d.status }}
+  - Відповідальні: {{ d.owners | join(', ') if d.owners else '—' }}
+  - Чинність з: {{ d.effective_from or '—' }}
+{% endfor %}
+{% else %}
+- (нема записаних рішень)
+{% endif %}
+
+## 📋 Дії
+{% if summary.action_items %}
+{% for a in summary.action_items %}
+- [ ] {{ a.task }}
+  - Відповідальні: {{ a.owners | join(', ') if a.owners else '—' }}
+  - Дедлайн: {{ a.due or '—' }}
+{% endfor %}
+{% else %}
+- [ ] …
+{% endif %}
+
+## ⚠️ Ризики та блокери
+{% if summary.risks %}
+{% for r in summary.risks %}
+- {{ r.description }}
+  - Ймовірність: {{ r.likelihood or '—' }}
+  - Вплив: {{ r.impact or '—' }}
+  - Власники мітігації: {{ r.mitigation_owners | join(', ') if r.mitigation_owners else '—' }}
+  - Крок: {{ r.mitigation_step or '—' }}
+{% endfor %}
+{% else %}
+- (нема записаних ризиків)
+{% endif %}
+
+{% if summary.followups %}
+## ❓ Відкриті питання
+{% for q in summary.followups %}
+- {{ q.question }}
+  - Хто відповідає: {{ q.owners | join(', ') if q.owners else '—' }}
+  - Дедлайн: {{ q.due or '—' }}
+{% endfor %}
+{% endif %}
+
+{% if summary.metrics %}
+## 📈 Метрики / результати (якщо були)
+{% for m in summary.metrics %}
+- {{ m.name }}
+  - Поточне значення: {{ m.current_value }}
+  - Ціль/наступний крок: {{ m.target_or_next or '—' }}
+{% endfor %}
+{% endif %}
+
+## 🔁 Наступні кроки / підготовка до наступного мітингу
+- Запланована дата/вікно: {{ summary.next_steps.date_window or '' }}
+- Власники агенди: {{ summary.next_steps.agenda_owners | join(', ') if summary.next_steps.agenda_owners else '' }}
+{% if summary.next_steps.prepare %}
+{% for p in summary.next_steps.prepare %}
+- {{ p }}
+{% endfor %}
+{% else %}
+- (нема записаних наступних кроків)
+{% endif %}
+
+
+

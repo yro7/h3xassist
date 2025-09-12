@@ -1,0 +1,147 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  PYTHON: uv run
+  WEB_DIR: h3xassist-web
+  SRC_DIR: src
+
+env:
+  H3XASSIST_LOG: '{{.H3XASSIST_LOG | default "INFO"}}'
+
+tasks:
+  # ==== Setup ====
+  install:
+    desc: Install all dependencies
+    cmds:
+      - uv sync
+      - cd {{.WEB_DIR}} && pnpm install
+
+  setup:
+    desc: Run basic setup wizard
+    cmds:
+      - '{{.PYTHON}} h3xassist config'
+      - 'echo "Optional - Browser profiles: uv run h3xassist setup browser"'
+      - 'echo "Optional - Outlook integration: uv run h3xassist setup outlook"'
+      - 'echo "Optional - AI models: uv run h3xassist setup models"'
+
+  # ==== Development ====
+  dev:
+    desc: Start development environment (run in separate terminals)
+    cmds:
+      - 'echo "Starting backend and frontend in parallel..."'
+      - 'echo "Backend: http://localhost:11411"'
+      - 'echo "Frontend: http://localhost:3000"'
+    deps: [dev:backend, dev:frontend]
+
+  dev:backend:
+    desc: Start backend service
+    cmds:
+      - '{{.PYTHON}} h3xassist service run'
+
+  dev:frontend:
+    desc: Start frontend dev server
+    dir: '{{.WEB_DIR}}'
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:11411
+      NEXT_PUBLIC_WS_URL: ws://localhost:11411/api/v1/ws
+    cmds:
+      - pnpm run dev
+
+  # ==== Production ====
+  build:
+    desc: Build frontend for production
+    dir: '{{.WEB_DIR}}'
+    cmds:
+      - pnpm run build
+
+  prod:
+    desc: Build and start production service
+    cmds:
+      - task: build
+      - '{{.PYTHON}} h3xassist service run'
+
+  # ==== Code Quality ====
+  format:
+    desc: Format all code
+    cmds:
+      - '{{.PYTHON}} ruff format {{.SRC_DIR}}/'
+      - cd {{.WEB_DIR}} && pnpm prettier --write . || true
+
+  lint:
+    desc: Lint all code
+    cmds:
+      - '{{.PYTHON}} ruff check {{.SRC_DIR}}/'
+      - cd {{.WEB_DIR}} && pnpm tsc --noEmit || true
+
+  typecheck:
+    desc: Run type checking
+    cmds:
+      - '{{.PYTHON}} mypy'
+      - cd {{.WEB_DIR}} && pnpm tsc --noEmit || true
+
+  check:
+    desc: Run all quality checks
+    cmds:
+      - task: lint
+      - task: typecheck
+
+  fix:
+    desc: Auto-fix linting issues
+    cmds:
+      - '{{.PYTHON}} ruff check --fix {{.SRC_DIR}}/'
+
+  # ==== Utilities ====
+  types:
+    desc: Generate TypeScript API types (requires running backend)
+    dir: '{{.WEB_DIR}}'
+    cmds:
+      - pnpm run types:generate
+
+  clean:
+    desc: Clean build artifacts and caches
+    cmds:
+      - find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+      - find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+      - cd {{.WEB_DIR}} && rm -rf .next/ out/ node_modules/.cache || true
+      - rm -rf dist/ build/ *.egg-info || true
+
+  # ==== Git Workflow ====
+  pre-commit:
+    desc: Run pre-commit checks
+    cmds:
+      - task: format
+      - task: check
+      - git status
+
+  # ==== Help ====
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  help:
+    desc: Show common workflows
+    cmds:
+      - |
+        'echo "H3xAssist Development Tasks"'
+        'echo "=========================="'
+        'echo ""'
+        'echo "🚀 Quick Start:"'
+        'echo "   task install     # Install dependencies"'
+        'echo "   task setup       # Run setup wizard"'
+        'echo "   task dev         # Start development"'
+        'echo ""'
+        'echo "🔧 Development:"'
+        'echo "   task dev:backend   # Backend only"'
+        'echo "   task dev:frontend  # Frontend only"'
+        'echo "   task format        # Format code"'
+        'echo "   task check         # Quality checks"'
+        'echo ""'
+        'echo "🏗️  Production:"'
+        'echo "   task build       # Build frontend"'
+        'echo "   task prod        # Production server"'
+        'echo ""'
+        'echo "📚 More: task --list"'

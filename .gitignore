@@ -1,0 +1,66 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Audio/Video files (recordings)
+*.wav
+*.mp3
+*.ogg
+*.mp4
+*.avi
+
+# Logs
+*.log
+logs/
+
+# Configuration with secrets
+.env
+.env.local
+settings.yaml
+config.yaml
+
+# Runtime directories
+recordings/
+meetings/
+profiles/
+
+# Temporary files
+temp*
+tmp*
+*.tmp
+*.bak
+*.backup
+
+# Next.js (frontend)
+h3xassist-web/.next/
+h3xassist-web/out/
+h3xassist-web/node_modules/
+h3xassist-web/.env*.local

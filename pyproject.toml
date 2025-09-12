@@ -1,0 +1,167 @@
+[project]
+name = "h3xassist"
+version = "0.1.0"
+description = "Automated meeting assistant: join, record, transcribe, and summarize."
+readme = "README.md"
+authors = [
+    { name = "ih3xcode", email = "ih3xcode@protonmail.com" }
+]
+requires-python = ">=3.12"
+keywords = [
+    "meetings",
+    "transcription",
+    "diarization",
+    "summarization",
+    "playwright",
+    "whisperx",
+    "pipewire",
+    "recording",
+    "outlook",
+    "msgraph",
+]
+license = "AGPL-3.0-or-later"
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "fastapi>=0.116.1",
+    "google-genai>=1.32.0",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "msal>=1.33.0",
+    "msgraph-sdk>=1.40.0",
+    "o365>=2.1.5",
+    "playwright>=1.55.0",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "pyyaml>=6.0.2",
+    "typer>=0.16.1",
+    "uvicorn>=0.35.0",
+    "websockets>=15.0.1",
+    "whisperx>=3.4.2",
+]
+
+[project.scripts]
+h3xassist = "h3xassist:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.17.1",
+    "ruff>=0.12.12",
+    "types-pytz>=2025.2.0.20250809",
+    "types-pyyaml>=6.0.12.20250822",
+    "types-requests>=2.32.4.20250809",
+]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_unimported = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+strict_concatenate = true
+check_untyped_defs = true
+disallow_subclassing_any = true
+disallow_untyped_decorators = true
+disallow_any_generics = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+disallow_any_explicit = false
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "src"
+follow_imports = "normal"
+show_error_codes = true
+pretty = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = [
+    "whisperx",
+    "whisperx.*",
+    "pydub",
+    "pydub.*",
+    "soundfile",
+    "msgraph.*",
+    "kiota_abstractions.*",
+    "azure.*",
+    "google.genai.*",
+    "O365.*",
+    "msal.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src"]
+extend-exclude = ["**/.venv", "**/.cache", "build", "dist", "h3xassist-web"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+  "F",
+  "E","W",
+  "I",
+  "UP",
+  "B",
+  "C4",
+  "SIM",
+  "ISC",
+  "TCH",
+  "ARG",
+  "DTZ",
+  "N",
+  "RUF"
+]
+ignore = [
+  "E203",
+  "E266",
+  "E501",
+]
+fixable = ["ALL"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["h3xassist"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/h3xassist/api/*" = ["TC001", "TC002", "TC003"]
+
+[tool.ruff.lint.flake8-type-checking]
+exempt-modules = ["typing", "typing_extensions"]
+quote-annotations = true
+runtime-evaluated-base-classes = [
+  "pydantic.BaseModel",
+]
+runtime-evaluated-decorators = [
+  "fastapi.FastAPI.get",
+  "fastapi.FastAPI.post",
+  "fastapi.FastAPI.put",
+  "fastapi.FastAPI.delete",
+  "fastapi.FastAPI.patch",
+  "fastapi.FastAPI.options",
+  "fastapi.FastAPI.head",
+  "fastapi.FastAPI.websocket",
+]
+strict = true
