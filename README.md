@@ -61,7 +61,93 @@ Automated meeting assistant that can join, record, transcribe, and summarize onl
 
 ## Quick Start
 
-### Prerequisites
+### Deployment Options
+
+You can deploy H3xAssist in two ways:
+
+1. **Docker (Recommended)** - Containerized deployment with all dependencies included
+2. **Manual Installation** - Direct installation on your system
+
+---
+
+### Docker Deployment (Recommended)
+
+#### Prerequisites
+
+- Linux with PipeWire or PulseAudio (Ubuntu 22.04+, Fedora 34+, Debian 12+)
+- Docker 20.10+
+- Docker Compose 2.0+
+- 4GB RAM minimum (8GB recommended)
+- 10GB storage for application + models
+
+#### Quick Setup
+
+1. **Clone the repository**
+   
+   ```bash
+   git clone https://github.com/yourusername/h3xassist.git
+   cd h3xassist
+   ```
+
+2. **Setup audio virtual device** (run once on host)
+   
+   ```bash
+   ./scripts/setup-audio.sh
+   ```
+
+3. **Deploy with Docker Compose**
+   
+   ```bash
+   ./scripts/deploy.sh
+   ```
+
+4. **Authenticate Teams bot account**
+   
+   ```bash
+   ./scripts/teams-auth.sh
+   ```
+
+5. **Access the web interface**
+   
+   Open http://localhost:11411 in your browser
+
+#### Docker Management
+
+```bash
+# Start/Stop service
+./scripts/manage.sh start
+./scripts/manage.sh stop
+
+# View logs
+./scripts/manage.sh logs
+
+# Check health
+./scripts/manage.sh health
+
+# Backup data
+./scripts/manage.sh backup
+
+# Validate browser profile
+./scripts/manage.sh validate-profile
+
+# Audio diagnostics
+./scripts/manage.sh audio-check
+```
+
+#### How Docker Audio Works
+
+1. Host creates virtual audio sink: `h3xassist-monitor`
+2. Browser in container outputs audio to this sink
+3. Container captures audio from the sink's monitor source
+4. Audio flows: Browser → Host Virtual Sink → Container AudioRecorder
+
+**Note**: The virtual device is lost on host reboot. Re-run `./scripts/setup-audio.sh` after reboot, or add it to your startup scripts.
+
+---
+
+### Manual Installation
+
+#### Prerequisites
 
 - Linux with PipeWire audio system
 - Python 3.12+
@@ -69,7 +155,7 @@ Automated meeting assistant that can join, record, transcribe, and summarize onl
 - Chromium/Chrome browser
 - [Task](https://taskfile.dev) (recommended for easier setup)
 
-### Installation with Task (Recommended)
+#### Installation with Task (Recommended)
 
 1. **Clone the repository**
    
@@ -106,7 +192,7 @@ Automated meeting assistant that can join, record, transcribe, and summarize onl
    
    Open http://localhost:11411 in your browser and complete the setup through the web interface
 
-### Manual Installation
+#### Manual Installation (Without Task)
 
 1. **Clone the repository**
    
@@ -152,11 +238,12 @@ Automated meeting assistant that can join, record, transcribe, and summarize onl
    
    Open http://127.0.0.1:11411 in your browser and complete the setup through the web interface
 
-### Optional Setup Commands
+#### Optional Setup Commands
 
 - **Browser profiles**: `uv run h3xassist setup browser`
 - **Outlook integration**: `uv run h3xassist setup outlook`
 - **AI models**: `uv run h3xassist setup models`
+- **Teams bot authentication** (Docker): `./scripts/teams-auth.sh`
 
 ## Usage
 

@@ -2,8 +2,10 @@ import asyncio
 import contextlib
 import logging
 import os
+import shutil
 import time
 import warnings
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -237,3 +239,178 @@ def models_download(
 ) -> None:
     """Download and manage AI models."""
     asyncio.run(download_models(model_dir, lang, hf_token, compute_type, device))
+
+
+@app.command("browser-auth")
+def browser_authentication(
+    profile: str = typer.Option(
+        default="teams-bot", help="Profile name for authenticated browser session"
+    ),
+    target_url: str = typer.Option(
+        default="https://teams.microsoft.com", help="URL to authenticate against"
+    ),
+    profiles_dir: str = typer.Option(
+        default=settings.browser.profiles_base_dir, help="Profiles base directory"
+    ),
+) -> None:
+    """Authenticate browser profile for automated meetings.
+
+    This opens a browser window where you can log into your account
+    and complete any MFA/2FA flows. The authenticated session is saved
+    to the specified profile for reuse in automated recordings.
+    """
+    from h3xassist.browser.auth import BrowserProfileManager, AuthenticationError
+
+    console.print(
+        Panel(
+            "[cyan]Browser Profile Authentication[/cyan]\n\n"
+            "This will open a browser window.\n"
+            "1. Log into your account\n"
+            f"2. Navigate to {target_url}\n"
+            "3. Complete any MFA/2FA challenges\n"
+            "4. Close the browser when done\n\n"
+            "The authenticated session will be saved for automated meetings.",
+            style="cyan",
+            expand=False,
+        )
+    )
+
+    manager = BrowserProfileManager(profiles_dir=profiles_dir)
+
+    async def auth_flow():
+        await manager.authenticate(profile, target_url)
+
+    try:
+        asyncio.run(auth_flow())
+
+        console.print(
+            Panel(
+                "[ok]Authentication complete![/ok]\n\n"
+                f"Profile saved to: {Path(profiles_dir).expanduser() / profile}\n\n"
+                "Next steps:\n"
+                "1. In web interface, select this profile when creating recordings\n"
+                "2. Bot will use authenticated session to join meetings\n"
+                "3. Session persists across container restarts",
+                style="green",
+                expand=False,
+            )
+        )
+    except AuthenticationError as e:
+        console.print(
+            Panel(
+                f"[error]Authentication failed: {e}[/error]\n\n"
+                "Please try again. Ensure you have a stable internet connection.",
+                style="red",
+                expand=False,
+            )
+        )
+        raise typer.Exit(1)
+
+
+@app.command("browser-auth-docker")
+def browser_authentication_docker(
+    profile: str = typer.Option(
+        default="teams-bot", help="Profile name for authenticated browser session"
+    ),
+    target_url: str = typer.Option(
+        default="https://teams.microsoft.com", help="URL to authenticate against"
+    ),
+) -> None:
+    """Authenticate browser profile inside Docker container with X11 forwarding.
+
+    Requires Docker container to have X11 forwarding enabled.
+    Run with: docker exec -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix ...
+    """
+    display = os.environ.get("DISPLAY")
+    if not display:
+        console.print(
+            Panel(
+                "[error]DISPLAY environment variable not set[/error]\n\n"
+                "Run this command with X11 forwarding:\n"
+                "docker exec -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix <container> h3xassist browser-auth-docker",
+                style="red",
+                expand=False,
+            )
+        )
+        raise typer.Exit(1)
+
+    if not os.path.exists("/tmp/.X11-unix"):
+        console.print("[warning]X11 socket not found, but continuing...[/warning]")
+
+    browser = "chromium-browser" if shutil.which("chromium-browser") else "chromium"
+
+    browser_authentication(
+        profile=profile, target_url=target_url, profiles_dir=settings.browser.profiles_base_dir
+    )
+
+
+@app.command("validate-profile")
+def validate_profile(
+    profile: str = typer.Option(default="teams-bot", help="Profile name to validate"),
+    online: bool = typer.Option(default=False, help="Perform online validation (opens browser)"),
+    profiles_dir: str = typer.Option(
+        default=settings.browser.profiles_base_dir, help="Profiles base directory"
+    ),
+) -> None:
+    """Validate browser profile session.
+
+    Checks if saved authentication session is still valid.
+    Use --online flag for accurate validation (opens browser).
+    """
+    from h3xassist.browser.auth import BrowserProfileManager
+
+    manager = BrowserProfileManager(profiles_dir=profiles_dir)
+
+    if online:
+        console.print(f"[info]Validating profile '{profile}' online...[/info]")
+
+        async def validate():
+            is_valid = await manager.validate_session_online(profile)
+            return is_valid
+
+        is_valid = asyncio.run(validate())
+
+        if is_valid:
+            console.print(
+                Panel(
+                    f"[ok]Profile '{profile}' is valid and authenticated[/ok]",
+                    style="green",
+                    expand=False,
+                )
+            )
+        else:
+            console.print(
+                Panel(
+                    f"[warning]Profile '{profile}' session expired[/warning]\n\n"
+                    "Re-authenticate with: h3xassist browser-auth --profile {profile}",
+                    style="yellow",
+                    expand=False,
+                )
+            )
+    else:
+        is_valid = manager.validate_session(profile)
+
+        if is_valid:
+            metadata = manager.load_profile(profile)
+            if metadata:
+                auth_date = datetime.fromisoformat(metadata["authenticated_at"])
+                age = (datetime.now() - auth_date).days
+                console.print(
+                    Panel(
+                        f"[ok]Profile '{profile}' appears valid[/ok]\n\n"
+                        f"Authenticated: {age} days ago\n"
+                        f"Location: {Path(profiles_dir).expanduser() / profile}",
+                        style="green",
+                        expand=False,
+                    )
+                )
+            else:
+                console.print(f"[info]Profile '{profile}' directory exists[/info]")
+        else:
+            console.print(
+                Panel(
+                    f"[error]Profile '{profile}' not found or invalid[/error]",
+                    style="red",
+                    expand=False,
+                )
+            )

@@ -167,6 +167,22 @@ class AudioSettings(BaseModel):
         title="Opus encoder settings",
         description="Nested configuration for Opus-related encoding parameters.",
     )
+    # WAV export settings (opt-in)
+    export_wav: bool = Field(
+        default=False,
+        title="Export WAV",
+        description="Whether to export recordings as WAV in addition to Opus",
+    )
+    wav_sample_rate: int = Field(
+        default=16000,
+        title="WAV sample rate",
+        description="Sample rate for WAV export (Hz)",
+    )
+    wav_bit_depth: int = Field(
+        default=16,
+        title="WAV bit depth",
+        description="Bit depth for WAV export (16 or 24)",
+    )
 
 
 class HttpSettings(BaseModel):
