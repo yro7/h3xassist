@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  h3xassist:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: h3xassist-bot
+    ports:
+      - "11411:11411"
+    volumes:
+      # Configuration and browser profiles (PERSISTENT - authenticated sessions)
+      - h3xassist-config:/root/.config/h3xassist
+      # Recordings and models (PERSISTENT - your data)
+      - h3xassist-data:/root/.local/share/h3xassist
+      # Audio socket from host (CRITICAL for audio capture)
+      - /run/pulse/native:/run/pulse/native
+      - /run/user/1000/pulse:/run/pulse:ro
+      # PipeWire runtime (required for some systems)
+      - /run/pipewire:/run/pipewire:ro
+      # X11 display for authentication
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+    environment:
+      # Audio configuration
+      - PULSE_SERVER=unix:/run/pulse/native
+      - XDG_RUNTIME_DIR=/run/pulse
+      # Display for browser authentication (only needed during auth phase)
+      - DISPLAY=${DISPLAY:-:99}
+      # Audio virtual device name for capture
+      - H3XASSIST__AUDIO__VIRTUAL_DEVICE_NAME=h3xassist-monitor
+      # Application settings
+      - H3XASSIST_LOG=INFO
+      # Optional: Override settings via environment
+      # - H3XASSIST__GENERAL__MEETING_DISPLAY_NAME=Teams Bot
+      # - H3XASSIST__HTTP__PORT=11411
+      # - H3XASSIST__BROWSER__STABILITY_PROFILE=default
+    devices:
+      # Direct audio device access (fallback if PipeWire fails)
+      - /dev/snd:/dev/snd
+    security_opt:
+      - seccomp:unconfined  # Required for Chromium sandbox
+    shm_size: '2gb'  # Shared memory for Chromium
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11411/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  h3xassist-config:
+    driver: local
+    name: h3xassist-config
+  h3xassist-data:
+    driver: local
+    name: h3xassist-data
+
+networks:
+  default:
+    name: h3xassist-network

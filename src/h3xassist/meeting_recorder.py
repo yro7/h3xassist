@@ -262,4 +262,38 @@ class MeetingRecorder:
         meta.status = RecordingStatus.READY
         handle.write_meta(meta)
 
+        if settings.audio.export_wav and not self._is_cancelled:
+            wav_path = handle.directory / "audio.wav"
+            try:
+                await self._export_wav(handle.audio, wav_path)
+            except Exception as e:
+                logger.warning("WAV export failed: %s", e)
+
         return not self._is_cancelled
+
+    async def _export_wav(self, ogg_path: Path, wav_path: Path) -> None:
+        """Convert Opus OGG to WAV format."""
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-i",
+            str(ogg_path),
+            "-ar",
+            str(settings.audio.wav_sample_rate),
+            "-sample_fmt",
+            f"s{settings.audio.wav_bit_depth}",
+            "-y",
+            str(wav_path),
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *ffmpeg_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+
+        if proc.returncode != 0:
+            logger.error("WAV export failed: %s", stderr.decode())
+            raise RuntimeError(f"WAV conversion failed: {stderr.decode()}")
+
+        logger.info("WAV export complete: %s", wav_path)
