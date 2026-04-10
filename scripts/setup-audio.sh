@@ -107,8 +107,9 @@ fi
 echo -e "${GREEN}✓${NC} PipeWire/PulseAudio detected"
 
 # Check for existing h3xassist virtual device
-EXISTING=$(pactl list short sinks | grep -c "h3xassist-monitor" || echo "0")
-if [ "$EXISTING" -gt 0 ]; then
+EXISTING=$(pactl list short sinks | grep -c "h3xassist-monitor" 2>/dev/null || echo "0")
+EXISTING=$(echo "$EXISTING" | tr -d '[:space:]')
+if [ "$EXISTING" -gt 0 ] 2>/dev/null; then
     echo -e "${YELLOW}⚠️  Virtual device 'h3xassist-monitor' already exists${NC}"
     echo "   Remove it first with:"
     echo "   pactl unload-module module-null-sink"
