@@ -15,6 +15,7 @@ Usage:
 """
 
 import asyncio
+import os
 from pathlib import Path
 from typing import Optional
 from datetime import datetime
@@ -84,7 +85,7 @@ class BrowserProfileManager:
 
         session = ExternalBrowserSession(
             browser_bin="chromium-browser",
-            env=dict(asyncio.get_event_loop().env),
+            env=os.environ.copy(),
             profile_dir=str(profile_path),
             automation_mode=False,
             headless=False,
@@ -200,7 +201,7 @@ class BrowserProfileManager:
 
         session = ExternalBrowserSession(
             browser_bin="chromium-browser",
-            env=dict(asyncio.get_event_loop().env),
+            env=os.environ.copy(),
             profile_dir=str(profile_path),
             automation_mode=True,
             headless=True,
