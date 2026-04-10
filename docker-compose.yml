@@ -18,12 +18,12 @@ services:
       # PipeWire runtime
       - /run/pipewire:/run/pipewire:ro
       # X11 display for browser authentication
-      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
     environment:
       # Audio
       - PULSE_SERVER=unix:/run/user/0/pulse/native
       - XDG_RUNTIME_DIR=/run/user/0
-      - DISPLAY=${DISPLAY:-:99}
+      - DISPLAY=${DISPLAY:-:92}
       # Audio virtual device name for capture
       - H3XASSIST_AUDIO__VIRTUAL_DEVICE_NAME=h3xassist-monitor
       # Application settings

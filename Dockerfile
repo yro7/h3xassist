@@ -32,7 +32,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     XDG_RUNTIME_DIR=/run/user/0 \
     H3XASSIST_CONFIG_DIR=/root/.config/h3xassist \
     H3XASSIST_DATA_DIR=/root/.local/share/h3xassist \
-    DISPLAY=:99
+    DISPLAY=:92
 
 # Install system dependencies in a single layer with no bloat
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -49,6 +49,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium-driver \
     # Headless Display
     xvfb xauth \
+    # Network utils for tunneling
+    socat \
     # Chromium runtime libs (deduplicated)
     libnss3 libnspr4 \
     libatk1.0-0 libatk-bridge2.0-0 libatspi2.0-0 \
