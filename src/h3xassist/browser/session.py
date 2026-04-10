@@ -259,6 +259,7 @@ class ExternalBrowserSession:
             "--ozone-platform=x11",
             "--no-sandbox",
             "--disable-dev-shm-usage",
+            "--remote-allow-origins=*",
         ]
 
         # Automation mode vs User configuration mode
