@@ -50,16 +50,22 @@ if [ ! -S /run/pulse/native ] && [ ! -S /run/user/0/pulse/native ]; then
 fi
 
 # Display setup check
-if [ -z "$DISPLAY" ] || [ "$DISPLAY" == ":99" ]; then
-    echo "🖥️  Starting virtual display (Xvfb) on :99..."
+if [ -z "$DISPLAY" ] || [ "$DISPLAY" == ":92" ]; then
+    echo "🖥️  Starting virtual display (Xvfb) on :92..."
     # Ensure DISPLAY is set for child processes
-    export DISPLAY=:99
+    export DISPLAY=:92
     # Clean up stale locks from previous runs
-    rm -f /tmp/.X99-lock
+    rm -f /tmp/.X92-lock
+    rm -f /tmp/.X11-unix/X92
     # Start Xvfb in background
-    Xvfb :99 -screen 0 1280x1024x24 -ac +extension GLX +render -noreset &
+    Xvfb :92 -screen 0 1280x1024x24 -ac +extension GLX +render -noreset &
     sleep 2
 fi
+
+# Port forwarding bridge for remote debugging
+# This allows access to Chromium's 127.0.0.1:9222 from outside the container
+echo "🌉 Starting socat bridge for remote debugging (9222 -> 127.0.0.1:9223)..."
+socat TCP4-LISTEN:9222,fork,reuseaddr TCP4:127.0.0.1:9223 &
 
 echo "✅ Starting H3xAssist service..."
 echo ""
