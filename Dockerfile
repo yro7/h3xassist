@@ -47,6 +47,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     chromium-common \
     chromium-driver \
+    # Headless Display
+    xvfb xauth \
     # Chromium runtime libs (deduplicated)
     libnss3 libnspr4 \
     libatk1.0-0 libatk-bridge2.0-0 libatspi2.0-0 \

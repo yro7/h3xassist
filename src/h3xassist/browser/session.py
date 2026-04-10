@@ -39,6 +39,8 @@ class ExternalBrowserSession:
         stability_profile: Literal["default", "software_safe", "gpu_balanced"] = "default",
         force_turn_tcp: bool = False,
         disable_telemetry: bool = True,
+        remote_debugging_port: int = 0,
+        remote_debugging_address: str = "127.0.0.1",
     ) -> None:
         self._browser_bin = browser_bin
         self._env = env if env is not None else os.environ.copy()
@@ -65,6 +67,8 @@ class ExternalBrowserSession:
         self._stability_profile = stability_profile
         self._force_turn_tcp = force_turn_tcp
         self._disable_telemetry = disable_telemetry
+        self._remote_debugging_port = remote_debugging_port
+        self._remote_debugging_address = remote_debugging_address
 
     async def __aenter__(self) -> Self:
         return await self.open()
@@ -106,7 +110,8 @@ class ExternalBrowserSession:
             if not line:
                 break
             text = line.decode(errors="ignore").strip()
-            logger.debug("[chromium] %s", text)
+            # Ensure we see EVERY line in logs when debugging
+            logger.info("[chromium-raw] %s", text)
             # Write initial logs to file if specified
             if self._log_file is not None:
                 from datetime import UTC, datetime
@@ -242,7 +247,8 @@ class ExternalBrowserSession:
         """Build Chromium arguments with automation modes and stability profiles."""
         args: list[str] = [
             self._browser_bin,
-            "--remote-debugging-port=0",
+            f"--remote-debugging-port={self._remote_debugging_port}",
+            f"--remote-debugging-address={self._remote_debugging_address}",
             f"--user-data-dir={user_data_dir}",
             # Automation essentials - always needed
             "--no-first-run",
@@ -251,6 +257,8 @@ class ExternalBrowserSession:
             "--test-type",
             # Always X11 per project policy
             "--ozone-platform=x11",
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
         ]
 
         # Automation mode vs User configuration mode

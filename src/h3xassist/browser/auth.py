@@ -90,6 +90,8 @@ class BrowserProfileManager:
             automation_mode=False,
             headless=False,
             stability_profile="default",
+            remote_debugging_port=9222,
+            remote_debugging_address="0.0.0.0",
         )
 
         async with session:
@@ -206,6 +208,8 @@ class BrowserProfileManager:
             automation_mode=True,
             headless=True,
             stability_profile="default",
+            remote_debugging_port=9222,
+            remote_debugging_address="0.0.0.0",
         )
 
         try:

@@ -49,6 +49,18 @@ if [ ! -S /run/pulse/native ] && [ ! -S /run/user/0/pulse/native ]; then
     pactl load-module module-null-sink sink_name=h3xassist-monitor sink_properties=device.description="H3XAssist_Virtual_Monitor" || true
 fi
 
+# Display setup check
+if [ -z "$DISPLAY" ] || [ "$DISPLAY" == ":99" ]; then
+    echo "🖥️  Starting virtual display (Xvfb) on :99..."
+    # Ensure DISPLAY is set for child processes
+    export DISPLAY=:99
+    # Clean up stale locks from previous runs
+    rm -f /tmp/.X99-lock
+    # Start Xvfb in background
+    Xvfb :99 -screen 0 1280x1024x24 -ac +extension GLX +render -noreset &
+    sleep 2
+fi
+
 echo "✅ Starting H3xAssist service..."
 echo ""
 
