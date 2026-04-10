@@ -39,15 +39,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Audio processing
-    ffmpeg=7:* \
-    pulseaudio-utils=16.1+dfsg~* \
-    libpipewire-0.3-0t64=1.0.4* \
-    pipewire-bin=1.0.4* \
-    pipewire-pulse=1.0.4* \
+    ffmpeg \
+    pulseaudio-utils \
+    libpipewire-0.3-0 \
+    pipewire-bin \
+    pipewire-pulse \
     # Chromium browser and dependencies
-    chromium=149:* \
-    chromium-common=149:* \
-    chromium-driver=149:* \
+    chromium \
+    chromium-common \
+    chromium-driver \
     libnss3 \
     libnspr4 \
     libatk1.0-0 \
@@ -60,7 +60,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxfixes3 \
     libxrandr2 \
     libgbm1 \
-    libasound2t64 \
     libpango-1.0-0 \
     libcairo2 \
     # Utilities
@@ -91,15 +90,22 @@ RUN pip install --no-cache-dir uv
 # Create application directory
 WORKDIR /app
 
-# Copy Python project files
-COPY pyproject.toml uv.lock ./
+# Copy Python lock files and configs first
+COPY pyproject.toml uv.lock README.md ./
+
+# Install only dependencies first (caches this heavy step as long as uv.lock doesn't change)
+# IMPORTANT: Install CPU-only torch to prevent downloading ~15GB of NVIDIA CUDA libraries
+RUN uv pip install --system --no-cache torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+RUN uv pip install --system --no-cache -r pyproject.toml
+
+# Copy source code
 COPY src/ ./src/
 
 # Copy built frontend from stage 1
 COPY --from=frontend-builder /build/out/ ./h3xassist-web/out/
 
-# Install Python dependencies
-RUN uv pip install --system --no-cache .
+# Install the project itself without reinstalling dependencies
+RUN uv pip install --system --no-cache --no-deps .
 
 # Install Playwright browsers (optional, we use system chromium)
 # RUN playwright install chromium

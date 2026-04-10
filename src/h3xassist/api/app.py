@@ -106,6 +106,8 @@ app.include_router(websocket.router, prefix="/api/v1")
 
 # Static files directory
 STATIC_DIR = Path(__file__).parent.parent.parent.parent / "h3xassist-web" / "out"
+if not STATIC_DIR.exists():
+    STATIC_DIR = Path("/app/h3xassist-web/out")
 
 # Mount static files if directory exists
 if STATIC_DIR.exists():
