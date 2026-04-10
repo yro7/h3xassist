@@ -15,11 +15,13 @@ services:
       - h3xassist-data:/root/.local/share/h3xassist
       # Audio socket from host (CRITICAL for audio capture)
       - /run/pulse/native:/run/pulse/native
-      - /run/user/1000/pulse:/run/pulse:ro
+      - /run/user/1000/pulse:/run/user/1000/pulse:ro
       # PipeWire runtime (required for some systems)
       - /run/pipewire:/run/pipewire:ro
       # X11 display for authentication
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      # FIX: Hot-patch app.py to resolve the 'Web interface not built' error without needing a full Docker build which crashes due to disk space
+      - ./src/h3xassist/api/app.py:/usr/local/lib/python3.12/site-packages/h3xassist/api/app.py:ro
     environment:
       # Audio configuration
       - PULSE_SERVER=unix:/run/pulse/native
@@ -27,13 +29,15 @@ services:
       # Display for browser authentication (only needed during auth phase)
       - DISPLAY=${DISPLAY:-:99}
       # Audio virtual device name for capture
-      - H3XASSIST__AUDIO__VIRTUAL_DEVICE_NAME=h3xassist-monitor
+      - H3XASSIST_AUDIO__VIRTUAL_DEVICE_NAME=h3xassist-monitor
       # Application settings
       - H3XASSIST_LOG=INFO
+      - H3XASSIST_SUMMARIZATION__ENABLED=false # Disabled by default to prevent startup crash
+      - H3XASSIST_HTTP__HOST=0.0.0.0 # Bind to all interfaces so Docker can expose the port
       # Optional: Override settings via environment
-      # - H3XASSIST__GENERAL__MEETING_DISPLAY_NAME=Teams Bot
-      # - H3XASSIST__HTTP__PORT=11411
-      # - H3XASSIST__BROWSER__STABILITY_PROFILE=default
+      # - H3XASSIST_GENERAL__MEETING_DISPLAY_NAME=Teams Bot
+      # - H3XASSIST_HTTP__PORT=11411
+      # - H3XASSIST_BROWSER__STABILITY_PROFILE=default
     devices:
       # Direct audio device access (fallback if PipeWire fails)
       - /dev/snd:/dev/snd
