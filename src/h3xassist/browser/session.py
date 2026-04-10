@@ -68,7 +68,7 @@ class ExternalBrowserSession:
         self._force_turn_tcp = force_turn_tcp
         self._disable_telemetry = disable_telemetry
         self._remote_debugging_port = remote_debugging_port
-        self._remote_debugging_address = remote_debugging_address
+        self._remote_debugging_address = "127.0.0.1"
 
     async def __aenter__(self) -> Self:
         return await self.open()
