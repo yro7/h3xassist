@@ -25,39 +25,41 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+if ! command -v docker compose &> /dev/null && ! docker compose version &> /dev/null; then
     echo -e "${RED}❌ Docker Compose not found. Please install Docker Compose.${NC}"
     exit 1
 fi
 
-# Check for PipeWire/PulseAudio
+# Note: PipeWire audio setup is now handled automatically inside the container.
+# External audio routing from host is optional and depends on your environment.
 if [ ! -S /run/pulse/native ] && [ ! -S /run/user/1000/pulse/native ]; then
-    echo -e "${YELLOW}⚠️  Warning: PulseAudio socket not found${NC}"
-    echo "   Audio recording may not work"
-    echo "   Ensure PipeWire/PulseAudio is running on host"
-    echo ""
-    read -p "Continue anyway? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+    echo -e "${YELLOW}ℹ️  Host audio socket not detected. The bot will use its internal audio pipeline.${NC}"
 fi
 
-# Build image
+# Build image with BuildKit for better performance
 echo ""
 echo "🔨 Building Docker image..."
-docker-compose build
-
-# Create volumes if they don't exist
-echo ""
-echo "💾 Creating volumes..."
-docker volume create $CONFIG_VOLUME
-docker volume create $DATA_VOLUME
+DOCKER_BUILDKIT=1 docker compose build
 
 # Start service
 echo ""
 echo "🎯 Starting H3xAssist service..."
-docker-compose up -d
+docker compose up -d
+
+# Initialize required state
+echo ""
+echo "⚙️  Initializing application state..."
+# Wait for container to be ready
+for i in {1..10}; do
+    if docker compose ps h3xassist | grep -q "Up"; then
+        # Create default browser profile directory if it doesn't exist
+        docker compose exec h3xassist mkdir -p /root/.config/h3xassist/browser-profiles/default
+        echo "✅ State initialized"
+        break
+    fi
+    echo "   Waiting for container to stabilize... ($i/10)"
+    sleep 2
+done
 
 # Wait for service to be healthy
 echo ""
@@ -76,7 +78,7 @@ done
 # Show status
 echo ""
 echo "📊 Service Status:"
-docker-compose ps
+docker compose ps
 
 echo ""
 echo -e "${GREEN}✅ Deployment complete!${NC}"

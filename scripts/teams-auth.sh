@@ -18,7 +18,7 @@ echo ""
 # Check if container is running
 if ! docker ps | grep -q $CONTAINER_NAME; then
     echo -e "${RED}❌ Container $CONTAINER_NAME is not running${NC}"
-    echo "   Start with: docker-compose up -d"
+    echo "   Start with: docker compose up -d"
     exit 1
 fi
 
@@ -36,7 +36,7 @@ if [ -n "$DISPLAY" ]; then
         -e DISPLAY=$DISPLAY \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -it $CONTAINER_NAME \
-        h3xassist teams-auth-docker --profile "$PROFILE"
+        h3xassist setup browser-auth-docker --profile "$PROFILE"
 else
     echo -e "${YELLOW}⚠️  No X11 display detected${NC}"
     echo ""
@@ -47,19 +47,19 @@ else
     echo "   $0 $PROFILE"
     echo ""
     echo "2. Manual profile mount (headless servers):"
-    echo "   docker-compose down"
+    echo "   docker compose down"
     echo "   docker run -it --rm \\"
     echo "     -v h3xassist-config:/root/.config/h3xassist \\"
     echo "     -e DISPLAY=\$DISPLAY \\"
     echo "     -v /tmp/.X11-unix:/tmp/.X11-unix \\"
-    echo "     h3xassist:latest h3xassist teams-auth"
-    echo "   docker-compose up -d"
+    echo "     h3xassist:latest h3xassist setup browser-auth"
+    echo "   docker compose up -d"
     echo ""
     read -p "Continue without X11? (y/N) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Attempting authentication anyway..."
-        docker exec -it $CONTAINER_NAME h3xassist teams-auth --profile "$PROFILE"
+        docker exec -it $CONTAINER_NAME h3xassist setup browser-auth --profile "$PROFILE"
     else
         echo "Aborted"
         exit 1
