@@ -6,6 +6,7 @@ services:
     container_name: h3xassist-bot
     ports:
       - "11411:11411"
+      - "9222:9222"
     volumes:
       # Configuration and browser profiles (PERSISTENT - authenticated sessions)
       - h3xassist-config:/root/.config/h3xassist
@@ -25,6 +26,7 @@ services:
       - DISPLAY=${DISPLAY:-:99}
       # Audio virtual device name for capture
       - H3XASSIST_AUDIO__VIRTUAL_DEVICE_NAME=h3xassist-monitor
+      # Application settings
       # Application settings
       - H3XASSIST_LOG=INFO
       - H3XASSIST_SUMMARIZATION__ENABLED=false
