@@ -7,21 +7,21 @@ shift || true
 case $COMMAND in
     start)
         echo "Starting H3xAssist..."
-        docker-compose up -d
+        docker compose up -d
         ;;
     stop)
         echo "Stopping H3xAssist..."
-        docker-compose down
+        docker compose down
         ;;
     restart)
         echo "Restarting H3xAssist..."
-        docker-compose restart
+        docker compose restart
         ;;
     logs)
-        docker-compose logs -f
+        docker compose logs -f
         ;;
     status)
-        docker-compose ps
+        docker compose ps
         ;;
     shell)
         docker exec -it $CONTAINER_NAME /bin/bash
@@ -81,11 +81,11 @@ case $COMMAND in
         docker exec -it $CONTAINER_NAME /app/scripts/docker-audio-check.sh
         ;;
     validate-profile)
-        docker exec -it $CONTAINER_NAME h3xassist validate-profile --online "$@"
+        docker exec -it $CONTAINER_NAME h3xassist setup validate-profile --online "$@"
         ;;
     clean)
         echo "Cleaning up unused resources..."
-        docker-compose down -v
+        docker compose down -v
         docker system prune -f
         echo "Cleanup complete"
         ;;

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   h3xassist:
     build:
@@ -13,44 +11,40 @@ services:
       - h3xassist-config:/root/.config/h3xassist
       # Recordings and models (PERSISTENT - your data)
       - h3xassist-data:/root/.local/share/h3xassist
-      # Audio socket from host (CRITICAL for audio capture)
+      # Audio socket from host PulseAudio/PipeWire (if available)
       - /run/pulse/native:/run/pulse/native
       - /run/user/1000/pulse:/run/user/1000/pulse:ro
-      # PipeWire runtime (required for some systems)
+      # PipeWire runtime
       - /run/pipewire:/run/pipewire:ro
-      # X11 display for authentication
+      # X11 display for browser authentication
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
-      # FIX: Hot-patch app.py to resolve the 'Web interface not built' error without needing a full Docker build which crashes due to disk space
-      - ./src/h3xassist/api/app.py:/usr/local/lib/python3.12/site-packages/h3xassist/api/app.py:ro
     environment:
-      # Audio configuration
-      - PULSE_SERVER=unix:/run/pulse/native
-      - XDG_RUNTIME_DIR=/run/pulse
-      # Display for browser authentication (only needed during auth phase)
+      # Audio
+      - PULSE_SERVER=unix:/run/user/0/pulse/native
+      - XDG_RUNTIME_DIR=/run/user/0
       - DISPLAY=${DISPLAY:-:99}
       # Audio virtual device name for capture
       - H3XASSIST_AUDIO__VIRTUAL_DEVICE_NAME=h3xassist-monitor
       # Application settings
       - H3XASSIST_LOG=INFO
-      - H3XASSIST_SUMMARIZATION__ENABLED=false # Disabled by default to prevent startup crash
-      - H3XASSIST_HTTP__HOST=0.0.0.0 # Bind to all interfaces so Docker can expose the port
-      # Optional: Override settings via environment
+      - H3XASSIST_SUMMARIZATION__ENABLED=false
+      - H3XASSIST_HTTP__HOST=0.0.0.0
+      # Optional overrides:
       # - H3XASSIST_GENERAL__MEETING_DISPLAY_NAME=Teams Bot
-      # - H3XASSIST_HTTP__PORT=11411
-      # - H3XASSIST_BROWSER__STABILITY_PROFILE=default
+      # - H3XASSIST_BROWSER__STABILITY_PROFILE=software_safe
     devices:
-      # Direct audio device access (fallback if PipeWire fails)
+      # Direct audio device access (fallback)
       - /dev/snd:/dev/snd
     security_opt:
       - seccomp:unconfined  # Required for Chromium sandbox
-    shm_size: '2gb'  # Shared memory for Chromium
+    shm_size: '2gb'         # Required for Chromium shared memory
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11411/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 60s
 
 volumes:
   h3xassist-config:

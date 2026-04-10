@@ -31,12 +31,22 @@ if [ ! -d "$MODELS_DIR" ]; then
 fi
 
 # Audio setup check
-if [ ! -S /run/pulse/native ]; then
-    echo "⚠️  Warning: PulseAudio socket not found"
-    echo "   Audio recording may not work"
-    echo "   Ensure host has PipeWire/PulseAudio running"
-    echo "   Mount with: -v /run/pulse/native:/run/pulse/native"
-    echo ""
+rm -f /run/user/0/pulse/native
+if [ ! -S /run/pulse/native ] && [ ! -S /run/user/0/pulse/native ]; then
+    echo "⚠️  No host PulseAudio socket found. Starting local PipeWire daemon inside container for headless operation..."
+    # Start pipewire daemon in background to handle audio routing internally
+    mkdir -p /run/user/0
+    export XDG_RUNTIME_DIR=/run/user/0
+    pipewire &
+    sleep 1
+    pipewire-pulse &
+    sleep 2
+    
+    # Set the new PULSE_SERVER to point to the local instance's default path if needed
+    export PULSE_SERVER=unix:/run/user/0/pulse/native
+    
+    # Create the virtual sink required by the application
+    pactl load-module module-null-sink sink_name=h3xassist-monitor sink_properties=device.description="H3XAssist_Virtual_Monitor" || true
 fi
 
 echo "✅ Starting H3xAssist service..."
