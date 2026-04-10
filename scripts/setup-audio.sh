@@ -8,26 +8,100 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}🔊 H3xAssist Audio Setup${NC}"
 echo "=========================="
 echo ""
 
-# Check for PipeWire/PulseAudio
+# Get user info
+CURRENT_USER=$(whoami)
+USER_ID=$(id -u)
+
+# Check for PipeWire/PulseAudio and install if missing
 if ! command -v pactl &> /dev/null; then
-    echo -e "${RED}❌ pactl not found${NC}"
-    echo "   Install PipeWire/PulseAudio first:"
-    echo "   Ubuntu/Debian: sudo apt install pipewire-pulse pulseaudio-utils"
-    echo "   Fedora: sudo dnf install pipewire-pulse pulseaudio-utils"
-    exit 1
+    echo -e "${YELLOW}⚠️  PipeWire/PulseAudio not found, installing...${NC}"
+    echo ""
+    
+    # Detect package manager
+    if command -v apt &> /dev/null; then
+        echo "Installing with apt..."
+        sudo apt update
+        sudo apt install -y pipewire pipewire-pulse wireplumber pulseaudio-utils
+    elif command -v dnf &> /dev/null; then
+        echo "Installing with dnf..."
+        sudo dnf install -y pipewire pipewire-pulse wireplumber pulseaudio-utils
+    elif command -v pacman &> /dev/null; then
+        echo "Installing with pacman..."
+        sudo pacman -S --noconfirm pipewire pipewire-pulse wireplumber pulseaudio
+    else
+        echo -e "${RED}❌ Unsupported package manager${NC}"
+        echo "   Please install PipeWire/PulseAudio manually"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✓${NC} Installation complete"
+    echo ""
+fi
+
+# Setup XDG_RUNTIME_DIR if not set
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+    export XDG_RUNTIME_DIR=/run/user/$USER_ID
+    echo -e "${CYAN}ℹ️  Setting XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR${NC}"
+fi
+
+# Create runtime directory if it doesn't exist
+if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+    echo "Creating runtime directory: $XDG_RUNTIME_DIR"
+    sudo mkdir -p $XDG_RUNTIME_DIR
+    sudo chown $CURRENT_USER:$CURRENT_USER $XDG_RUNTIME_DIR
+    chmod 700 $XDG_RUNTIME_DIR
+    echo -e "${GREEN}✓${NC} Runtime directory created"
 fi
 
 # Check if PipeWire/PulseAudio is running
+echo "Checking PipeWire/PulseAudio status..."
 if ! pactl info &> /dev/null; then
-    echo -e "${RED}❌ PipeWire/PulseAudio is not running${NC}"
-    echo "   Start the audio service first"
-    exit 1
+    echo -e "${YELLOW}⚠️  PipeWire/PulseAudio is not running${NC}"
+    echo "   Attempting to start services..."
+    echo ""
+    
+    # Kill any existing instances
+    pkill pipewire 2>/dev/null || true
+    pkill wireplumber 2>/dev/null || true
+    
+    sleep 1
+    
+    # Try systemd first
+    if command -v systemctl &> /dev/null && systemctl --user status &> /dev/null; then
+        echo "Starting with systemd --user..."
+        systemctl --user start pipewire pipewire-pulse wireplumber || true
+        sleep 2
+        
+        if pactl info &> /dev/null; then
+            echo -e "${GREEN}✓${NC} Services started via systemd"
+        fi
+    fi
+    
+    # Fallback to manual start
+    if ! pactl info &> /dev/null; then
+        echo "Starting services manually..."
+        pipewire &
+        pipewire-pulse &
+        wireplumber &
+        sleep 3
+        
+        if pactl info &> /dev/null; then
+            echo -e "${GREEN}✓${NC} Services started manually"
+        else
+            echo -e "${RED}❌ Failed to start PipeWire/PulseAudio${NC}"
+            echo "   Try logging out and back in, or rebooting"
+            exit 1
+        fi
+    fi
+else
+    echo -e "${GREEN}✓${NC} PipeWire/PulseAudio is running"
 fi
 
 echo -e "${GREEN}✓${NC} PipeWire/PulseAudio detected"
